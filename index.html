@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Grade Files — Viewer</title>
+  <meta name="description" content="Public, viewable grade PDFs (and one JPEG) embedded in-page." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0b1220;--card:rgba(255,255,255,.06);--text:#e6eefc;--muted:#9fb0d8;--ring:rgba(124,92,255,.35)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text);
+      background:radial-gradient(1200px 800px at 15% -10%, #17203a 0%, #0b1220 70%),radial-gradient(900px 600px at 120% 10%, #111a33 0%, #0b1220 60%),linear-gradient(180deg,#0b1220,#0b1220);padding:28px}
+    .wrap{max-width:1200px;margin:0 auto}
+    .header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}
+    h1{font-size:clamp(22px,3vw,36px);margin:0;font-weight:800}
+    .muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden}
+    .card header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .card h3{margin:0;font-size:15px} .meta{display:flex;align-items:center;gap:8px} .chip{border:1px solid rgba(255,255,255,.18);padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700} .chip.a{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.28)} .chip.g{background:rgba(124,92,255,.14);color:#d7cbff;border-color:rgba(124,92,255,.28)} .stack{display:flex;align-items:center;gap:10px} .btn{appearance:none;border:1px solid transparent;border-radius:999px;padding:8px 12px;background:rgba(124,92,255,.14);color:var(--text);font-weight:600;cursor:pointer;backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px);transition:.18s} .btn:hover{box-shadow:0 0 0 3px var(--ring) inset;transform:translateY(-1px)}
+    .btn{appearance:none;border:1px solid transparent;border-radius:999px;padding:8px 12px;background:rgba(124,92,255,.14);color:var(--text);font-weight:600;cursor:pointer;backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px);transition:.18s}
+    .btn:hover{box-shadow:0 0 0 3px var(--ring) inset;transform:translateY(-1px)}
+    iframe,object{width:100%;height:70vh;border:0;background:#0e162a}
+    img.viewer{width:100%;height:auto;display:block;background:#0e162a}
+    .note{margin-top:12px;font-size:12px}
+    .foot{margin-top:18px;color:var(--muted);font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>Your Grade Files — Embedded</h1>
+        <div class="muted">Exact filenames you gave me; drop these next to <code>index.html</code> and they’ll render public on GitHub Pages.</div>
+      </div>
+      <button id="printBtn" class="btn" title="Print this page or save as PDF">Print / Save PDF</button>
+    </div>
+
+    <div class="card" style="padding:12px 14px;margin-bottom:16px">
+      <strong>GPA note:</strong> All documents here convert to <strong>4.0 GPA (A)</strong> on the common US, unweighted scale. (Typical mapping for French /20: ≥16 → A/4.0; 14–15.99 → A‑/3.7; 13–13.99 → B+/3.3; 12–12.99 → B/3.0; 11–11.99 → B‑/2.7; 10–10.99 → C/2.0.)
+    </div>
+
+    <div id="pdfGrid" class="grid" aria-live="polite"></div>
+
+    <div class="foot">If a browser blocks inline viewing, the “Open” button still loads the file in a new tab.</div>
+  </div>
+
+  <script>
+    // Using your exact filenames (spaces and all). encodeURI() covers them for the web.
+    const path = './';
+    const docs = [
+      { title: 'Grade 10 — First Semester',  file: 'Grade 10 first semester.pdf', gpa: 4.0, letter: 'A' },
+      { title: 'Grade 10 — Second Semester', file: 'Grade 10 second semester.pdf', gpa: 4.0, letter: 'A' },
+      { title: 'Grade 10 — Third Semester',  file: 'Grade 10 third semester.pdf', gpa: 4.0, letter: 'A' },
+      { title: 'Grade 11 — First Semster',   file: 'Grade 11 first semster.pdf',  gpa: 4.0, letter: 'A' },
+      { title: 'Grade 11 — Second Semester', file: 'Grade 11 second semester.pdf', gpa: 4.0, letter: 'A' },
+      { title: 'Grade 11 — Third Semester',  file: 'Grade 11 third semester.pdf', gpa: 4.0, letter: 'A' },
+      { title: 'Grade 12 — First Semester first part', file: 'Grade 12 first semester.png', gpa: 4.0, letter: 'A' },
+      { title: 'Grade 12 — First Semester second part', file: 'second part.jpeg', gpa: 4.0, letter: 'A' },
+    
+    ];
+
+    const grid = document.getElementById('pdfGrid');
+
+    function createCard(doc){
+      const card = document.createElement('section');
+      card.className = 'card';
+      const src = path + encodeURI(doc.file);
+      const isPDF = doc.file.toLowerCase().endsWith('.pdf');
+      card.innerHTML = `
+        <header>
+          <div class="meta">
+            <h3>${doc.title}</h3>
+            <span class="chip a">${doc.letter}</span>
+            <span class="chip g">${doc.gpa.toFixed(1)} GPA</span>
+          </div>
+          <div class="stack">
+            <a class=\"btn\" href=\"${src}\" target=\"_blank\" rel=\"noopener\">Open</a>
+            <a class=\"btn\" href=\"${src}\" download>Download</a>
+          </div>
+        </header>
+        ${isPDF ? `<object data="${src}" type="application/pdf"><iframe src="${src}"></iframe></object>`
+                 : `<img class="viewer" src="${src}" alt="${doc.title}">`}
+      `;
+      grid.appendChild(card);
+    }
+
+    docs.forEach(createCard);
+
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>
